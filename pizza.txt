@@ -1,11 +1,11 @@
 Our solution assumes a model in which there are 6 graduate students,
 2 undergraduates, and 2 tables. There are semaphores for each table
-(initialized to 1) used to ensure there is only one student eating at a
-given table at any given time. There is a semaphore for the graduate
-students and a semaphore for each of the undergrads. Each time a
-graduate student eats, the graduate-semaphore is decremented and both
-undergrad-semaphores are incremented. Each time an undergrad eates,
-his/her own semaphore is decremented and the graduate-semaphore is
+(initialized to 1) used to ensure there is only one student eating
+at a given table at any given time. There is a semaphore for the
+graduate students and a semaphore for each of the undergrads. Each
+time a graduate student eats, the graduate-semaphore is decremented
+and both undergrad-semaphores are incremented. Each time an undergrad
+eats, his/her own semaphore is decremented and the graduate-semaphore is
 incremented 3 times. The end result is that the graduates and undergrads
 take turns eating, with the graduates going first since their semaphore
 is initialized to 6 and the undergrads' semaphores are initialized to

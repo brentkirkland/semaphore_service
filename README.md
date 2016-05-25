@@ -2,12 +2,13 @@
 
 ### Brent Kirkland and Greg Gunterson
 
-_                    
-___  ___ _ __ ___   __ _ _ __ | |__   ___  _ __ ___
+```
+____  ___ _ __ ___   __ _ _ __ | |__   ___  _ __ ___
 / __|/ _ \ '_ ` _ \ / _` | '_ \| '_ \ / _ \| '__/ _ \
 \__ \  __/ | | | | | (_| | |_) | | | | (_) | | |  __/
 |___/\___|_| |_| |_|\__,_| .__/|_| |_|\___/|_|  \___|
 |_|                         
+```                       
 
 This minix 3.2.1 project creates a minix _service_ for semaphores. This is not service that starts directly with boot.
 

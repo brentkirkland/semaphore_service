@@ -27,15 +27,17 @@ Semaphores allow for synchronization across multiple processes. Within this proj
 4. reboot
 ```
 
-_NOTE:_ `ake include etcforce` can cause trouble with pkgin. Use it with caution or include:
+_NOTE:_ `make include etcforce` can cause trouble with pkgin. Use it with caution or include:
 
 ```
 service sema {
   system ALL:
   ipc ALL;
   uid 0;
-}
+};
 ```
+to /etc/system.conf
+
 
 ### TESTING
 Compile pizza.c with cc. There is only one single for for testing, because it instead uses fork and wait to spawn separate processes for undergrads and grads.

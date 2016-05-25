@@ -1,0 +1,719 @@
+diff -ruNp actual_source_clean/etc/system.conf minix_src_clean/etc/system.conf
+--- actual_source_clean/etc/system.conf	2013-02-15 03:18:13.000000000 -0800
++++ minix_src_clean/etc/system.conf	2016-05-23 18:35:33.000000000 -0700
+@@ -380,7 +380,7 @@ service at_wini
+ 		VDEVIO		# 23
+ 		READBIOS	# 35
+ 	;
+-	pci class	
++	pci class
+ 		1/1		# Mass storage / IDE
+ 		1/80		# Mass storage / Other (80 hex)
+ 		1/4		# Mass storage / RAID
+@@ -503,12 +503,12 @@ service osscore
+ 		DEVIO		# 21
+ 		SDEVIO		# 22
+ 	;
+-	pci class	
++	pci class
+ 		4/1		# Multimedia / Audio device
+ 	;
+ 	ipc
+ 		SYSTEM pm rs log tty ds vfs vm
+-		pci inet lwip amddev 
++		pci inet lwip amddev
+ 		;
+ 	uid     0;
+ };
+@@ -560,14 +560,14 @@ service gpio
+ 		PRIVCTL		#  4
+ 		IRQCTL          # 19
+ 	;
+-	irq	
++	irq
+ 		29	# GPIO module 1
+ 		30	# GPIO module 2
+-		31	# GPIO module 3 
+-		32	# GPIO module 4 
+-		33	# GPIO module 5 
++		31	# GPIO module 3
++		32	# GPIO module 4
++		33	# GPIO module 5
+ 		34	# GPIO module 6
+-	;		
++	;
+ 
+ };
+ 
+@@ -599,3 +599,11 @@ service fbd
+ 		bios_wini
+ 	;
+ };
++
++service sema {
++
++	system		ALL;		# ALL kernel calls allowed
++
++	ipc				ALL;		# ALL ipc targets allowed
++	uid				0;
++};
+diff -ruNp actual_source_clean/etc/usr/rc minix_src_clean/etc/usr/rc
+--- actual_source_clean/etc/usr/rc	2013-02-15 03:18:13.000000000 -0800
++++ minix_src_clean/etc/usr/rc	2016-05-23 18:35:23.000000000 -0700
+@@ -30,9 +30,9 @@ disabled()
+ {
+     ifs="$IFS"; IFS=,
+     for skip in `sysenv disable`
+-    do 
++    do
+         if [ "$skip" = "$1" ]
+-	then 	 
++	then
+                 IFS="$ifs"; unset ifs
+ 		return 0
+ 	fi
+@@ -84,7 +84,7 @@ up()
+     for dir in $SERVICES_DIRS
+     do	bin=$dir/$service
+ 	if [ -x $bin -a -z "$found" ]
+-	then	service $opt up $bin "$@" 
++	then	service $opt up $bin "$@"
+     		echo -n " $service"
+ 		found=yes
+ 	fi
+@@ -150,6 +150,8 @@ start)
+     # Network initialization.
+     (: </dev/tcp) 2>/dev/null && net=t	# Is there a TCP/IP server?
+ 
++    up -n sema
++
+     echo -n "Starting daemons:"
+     daemonize update
+ 
+diff -ruNp actual_source_clean/include/Makefile minix_src_clean/include/Makefile
+--- actual_source_clean/include/Makefile	2013-02-15 03:18:13.000000000 -0800
++++ minix_src_clean/include/Makefile	2016-05-23 16:27:04.000000000 -0700
+@@ -29,6 +29,8 @@ INCS+=	protocols/dumprestore.h protocols
+ 
+ INCS+=	hesiod.h
+ 
++INCS+=	sema.h
++
+ INCS+=	rpcsvc/yp_prot.h rpcsvc/ypclnt.h
+ 
+ INCS+=  ssp/ssp.h ssp/stdio.h ssp/string.h ssp/strings.h ssp/unistd.h
+@@ -39,7 +41,7 @@ INCS+=	ieeefp.h
+ 
+ .if defined(__MINIX)
+ # MINIX Specific headers.
+-INCS+=  env.h fetch.h lib.h libutil.h timers.h varargs.h 
++INCS+=  env.h fetch.h lib.h libutil.h timers.h varargs.h
+ .endif
+ 
+ 
+diff -ruNp actual_source_clean/include/minix/com.h minix_src_clean/include/minix/com.h
+--- actual_source_clean/include/minix/com.h	2013-02-15 03:18:13.000000000 -0800
++++ minix_src_clean/include/minix/com.h	2016-05-22 17:12:53.000000000 -0700
+@@ -21,18 +21,19 @@
+  *    0xE00 -  0xEFF	Common system messages (e.g. system signals)
+  *    0xF00 -  0xFFF    Scheduling messages
+  *   0x1000 - 0x10FF	Notify messages
+- *   0x1100 - 0x11FF	USB  
++ *   0x1100 - 0x11FF	USB
+  *   0x1200 - 0x12FF    Devman
+  *   0x1300 - 0x13FF    TTY Input
+  *   0x1400 - 0x14FF	VFS-FS transaction IDs
+  *   0x1500 - 0x15FF	Block device requests and responses
+  *   0x1600 - 0x16FF	VirtualBox (VBOX) requests (see vboxif.h)
++ *   0x1700 - 0x17FF	Semaphore serivce, sema.
+  *
+  * Zero and negative values are widely used for OK and error responses.
+  */
+ 
+ #ifndef _MINIX_COM_H
+-#define _MINIX_COM_H 
++#define _MINIX_COM_H
+ 
+ /*===========================================================================*
+  *          	    		Magic process numbers			     *
+@@ -42,7 +43,7 @@
+ #define ANY	((endpoint_t) 0x7ace)	/* used to indicate 'any process' */
+ #define NONE 	((endpoint_t) 0x6ace)   /* used to indicate 'no process at all' */
+ #define SELF	((endpoint_t) 0x8ace) 	/* used to indicate 'own process' */
+-#define _MAX_MAGIC_PROC (SELF)	/* used by <minix/endpoint.h> 
++#define _MAX_MAGIC_PROC (SELF)	/* used by <minix/endpoint.h>
+ 				   to determine generation size */
+ 
+ /*===========================================================================*
+@@ -53,7 +54,7 @@
+  * are enabled. They are defined as (PREVIOUS_TASK - ENABLE_TASK) in general.
+  * ENABLE_TASK is either 0 or 1, so a task either gets a new number, or gets
+  * the same number as the previous task and is further unused. Note that the
+- * order should correspond to the order in the task table defined in table.c. 
++ * order should correspond to the order in the task table defined in table.c.
+  */
+ 
+ /* Kernel tasks. These all run in the same address space. */
+@@ -66,7 +67,7 @@
+ 
+ /* Number of tasks. Note that NR_PROCS is defined in <minix/config.h>. */
+ #define MAX_NR_TASKS	1023
+-#define NR_TASKS	  5 
++#define NR_TASKS	  5
+ 
+ /* User-space processes, that is, device drivers, servers, and INIT. */
+ #define PM_PROC_NR   ((endpoint_t) 0)	/* process manager */
+@@ -98,7 +99,7 @@
+  * so make sure that these types do not interfere with other message types.
+  * Notifications are prioritized because of the way they are unhold() and
+  * blocking notifications are delivered. The lowest numbers go first. The
+- * offset are used for the per-process notification bit maps. 
++ * offset are used for the per-process notification bit maps.
+  */
+ #define NOTIFY_MESSAGE		  0x1000
+ /* FIXME the old is_notify(a) should be replaced by is_ipc_notify(status). */
+@@ -166,7 +167,7 @@
+ 							 * driver (safecopy)
+ 							 */
+ #define BUSC_PCI_DEL_ACL	(BUSC_RQ_BASE + 18)	/* Delete the ACL of a
+-							 * driver 
++							 * driver
+ 							 */
+ #define BUSC_PCI_GET_BAR	(BUSC_RQ_BASE + 19)	/* Get Base Address
+ 							 * Register properties
+@@ -242,15 +243,15 @@
+ #define TTY_LINE	DEVICE	/* message parameter: terminal line */
+ #define TTY_REQUEST	COUNT	/* message parameter: ioctl request code */
+ #define TTY_SPEK	POSITION/* message parameter: ioctl speed, erasing */
+-#define TTY_PGRP 	m2_i3	/* message parameter: process group */	
++#define TTY_PGRP 	m2_i3	/* message parameter: process group */
+ 
+ /*===========================================================================*
+  *                  	   Messages for networking layer		     *
+  *===========================================================================*/
+ 
+ /* Base type for data link layer requests and responses. */
+-#define DL_RQ_BASE	0x200		
+-#define DL_RS_BASE	0x280		
++#define DL_RQ_BASE	0x200
++#define DL_RS_BASE	0x280
+ 
+ /* Message types for data link layer requests. */
+ #define DL_CONF		(DL_RQ_BASE + 0)
+@@ -286,11 +287,11 @@
+  *                  SYSTASK request types and field names                    *
+  *===========================================================================*/
+ 
+-/* System library calls are dispatched via a call vector, so be careful when 
++/* System library calls are dispatched via a call vector, so be careful when
+  * modifying the system call numbers. The numbers here determine which call
+  * is made from the call vector.
+- */ 
+-#define KERNEL_CALL	0x600	/* base for kernel calls to SYSTEM */ 
++ */
++#define KERNEL_CALL	0x600	/* base for kernel calls to SYSTEM */
+ 
+ #  define SYS_FORK       (KERNEL_CALL + 0)	/* sys_fork() */
+ #  define SYS_EXEC       (KERNEL_CALL + 1)	/* sys_exec() */
+@@ -330,7 +331,7 @@
+ #  define SYS_SETGRANT   (KERNEL_CALL + 34)	/* sys_setgrant() */
+ #  define SYS_READBIOS   (KERNEL_CALL + 35)	/* sys_readbios() */
+ 
+-#  define SYS_SPROF      (KERNEL_CALL + 36)     /* sys_sprof() */ 
++#  define SYS_SPROF      (KERNEL_CALL + 36)     /* sys_sprof() */
+ #  define SYS_CPROF      (KERNEL_CALL + 37)     /* sys_cprof() */
+ #  define SYS_PROFBUF    (KERNEL_CALL + 38)     /* sys_profbuf() */
+ 
+@@ -413,7 +414,7 @@
+ #define IRQ_VECTOR	m5_s2   /* irq vector */
+ #define IRQ_POLICY	m5_i1   /* options for IRQCTL request */
+ #  define IRQ_REENABLE  0x001	/* reenable IRQ line after interrupt */
+-#  define IRQ_BYTE      0x100	/* byte values */      
++#  define IRQ_BYTE      0x100	/* byte values */
+ #  define IRQ_WORD      0x200	/* word values */
+ #  define IRQ_LONG      0x400	/* long values */
+ #define IRQ_HOOK_ID	m5_l3   /* id of irq hook at kernel */
+@@ -473,9 +474,9 @@
+ #   define GET_CPUINFO    23    /* get information about cpus */
+ #   define GET_REGS	  24	/* get general process registers */
+ #define I_ENDPT        m7_i4	/* calling process (may only be SELF) */
+-#define I_VAL_PTR      m7_p1	/* virtual address at caller */ 
++#define I_VAL_PTR      m7_p1	/* virtual address at caller */
+ #define I_VAL_LEN      m7_i1	/* max length of value */
+-#define I_VAL_PTR2     m7_p2	/* second virtual address */ 
++#define I_VAL_PTR2     m7_p2	/* second virtual address */
+ #define I_VAL_LEN2_E   m7_i2	/* second length, or proc nr */
+ 
+ /* GET_WHOAMI fields. */
+@@ -573,7 +574,7 @@
+ 
+ /* Field names for SYS_SPROF, _CPROF, _PROFBUF. */
+ #define PROF_ACTION    m7_i1    /* start/stop/reset/get */
+-#define PROF_MEM_SIZE  m7_i2    /* available memory for data */ 
++#define PROF_MEM_SIZE  m7_i2    /* available memory for data */
+ #define PROF_FREQ      m7_i3    /* sample frequency */
+ #define PROF_ENDPT     m7_i4    /* endpoint of caller */
+ #define PROF_INTR_TYPE m7_i5    /* interrupt type */
+@@ -660,9 +661,9 @@
+ 
+ /* Subfunctions for SYS_SCHEDCTL */
+ #define SCHEDCTL_FLAGS		m9_l1	/* flags for setting the scheduler */
+-#  define SCHEDCTL_FLAG_KERNEL	1	/* mark kernel scheduler and remove 
+-					 * RTS_NO_QUANTUM; otherwise caller is 
+-					 * marked scheduler 
++#  define SCHEDCTL_FLAG_KERNEL	1	/* mark kernel scheduler and remove
++					 * RTS_NO_QUANTUM; otherwise caller is
++					 * marked scheduler
+ 					 */
+ #define SCHEDCTL_ENDPOINT	m9_l2	/* endpt of process to be scheduled */
+ #define SCHEDCTL_QUANTUM	m9_l3   /* current scheduling quantum */
+@@ -830,10 +831,10 @@
+ 					 * text segment is already present)
+ 					 */
+ #define EXC_NM_RF_ALLOW_SETUID	2	/* Setuid execution is allowed (tells
+-					 * FS to update its uid and gid 
++					 * FS to update its uid and gid
+ 					 * fields.
+ 					 */
+-#define EXC_NM_RF_FULLVM	4	
++#define EXC_NM_RF_FULLVM	4
+ 
+ /* Parameters for the EXEC_RESTART call */
+ #define EXC_RS_PROC	m1_i1		/* process that needs to be restarted */
+@@ -1174,7 +1175,7 @@
+ #define USB_RQ_DEINIT        (USB_BASE +  1) /* Quit the session */
+ #define USB_RQ_SEND_URB      (USB_BASE +  2) /* Send URB */
+ #define USB_RQ_CANCEL_URB    (USB_BASE +  3) /* Cancel URB */
+-#define USB_REPLY            (USB_BASE +  4) 
++#define USB_REPLY            (USB_BASE +  4)
+ 
+ 
+ /* those are from USBD to driver */
+@@ -1280,4 +1281,19 @@
+ #  define BDEV_NOFLAGS		0x00	/* no flags are set */
+ #  define BDEV_FORCEWRITE	0x01	/* force write to disk immediately */
+ 
++/*===========================================================================*
++ *			Messages for Semaphore service		     *
++ *===========================================================================*/
++
++ # define SEMA_BASE     0x1700
++
++ # define SEMA_INIT     (SEMA_BASE + 0)
++ # define SEMA_DOWN     (SEMA_BASE + 1)
++ # define SEMA_UP       (SEMA_BASE + 2)
++ # define SEMA_RELEASE  (SEMA_BASE + 3)
++
++ # define SEMA_NUM      m1_i1
++ # define SEMA_VALUE    m1_i2
++ # define SEMA_STATUS   m2_i1
++
+ /* _MINIX_COM_H */
+diff -ruNp actual_source_clean/include/sema.h minix_src_clean/include/sema.h
+--- actual_source_clean/include/sema.h	1969-12-31 16:00:00.000000000 -0800
++++ minix_src_clean/include/sema.h	2016-05-23 16:01:17.000000000 -0700
+@@ -0,0 +1,9 @@
++#ifndef _MINIX_SEMA_H
++#define _MINIX_SEMA_H
++
++int sem_init(int start_value);
++int sem_down(int semaphore_number);
++int sem_up(int semaphore_number);
++int sem_release(int semaphore_number);
++
++#endif
+diff -ruNp actual_source_clean/lib/libc/sys-minix/Makefile.inc minix_src_clean/lib/libc/sys-minix/Makefile.inc
+--- actual_source_clean/lib/libc/sys-minix/Makefile.inc	2013-02-15 03:18:14.000000000 -0800
++++ minix_src_clean/lib/libc/sys-minix/Makefile.inc	2016-05-22 18:11:09.000000000 -0700
+@@ -11,7 +11,7 @@ SRCS+= 	accept.c access.c bind.c brk.c s
+ 	minix_rs.c mkdir.c mkfifo.c mknod.c mmap.c mount.c nanosleep.c \
+ 	open.c pathconf.c pipe.c poll.c pread.c ptrace.c pwrite.c \
+ 	read.c readlink.c reboot.c recvfrom.c recvmsg.c rename.c\
+-	rmdir.c select.c sem.c sendmsg.c sendto.c setgroups.c setsid.c \
++	rmdir.c select.c sem.c sema.c sendmsg.c sendto.c setgroups.c setsid.c \
+ 	setgid.c settimeofday.c setuid.c shmat.c shmctl.c shmget.c stime.c \
+ 	vectorio.c shutdown.c sigaction.c sigpending.c sigreturn.c sigsuspend.c\
+ 	sigprocmask.c socket.c socketpair.c stat.c statvfs.c symlink.c \
+diff -ruNp actual_source_clean/lib/libc/sys-minix/sema.c minix_src_clean/lib/libc/sys-minix/sema.c
+--- actual_source_clean/lib/libc/sys-minix/sema.c	1969-12-31 16:00:00.000000000 -0800
++++ minix_src_clean/lib/libc/sys-minix/sema.c	2016-05-23 23:21:23.000000000 -0700
+@@ -0,0 +1,66 @@
++#include <sys/cdefs.h>
++#include "namespace.h"
++#include <lib.h>
++#include <minix/com.h>
++#include <minix/rs.h>
++#include <stdio.h>
++#include <stdlib.h>
++
++int sem_init(int start_value) {
++
++  endpoint_t sema;
++  message msg;
++
++  if (minix_rs_lookup("sema", &sema) != 0) {
++    return ENOSYS;
++  }
++
++  msg.SEMA_VALUE = start_value;
++
++  /* printf("WORK ME GODDAMNIT\n"); */
++
++  return _syscall(sema, SEMA_INIT, &msg);
++
++}
++
++int sem_down(int semaphore_number) {
++
++  endpoint_t sema;
++  message msg;
++
++  if (minix_rs_lookup("sema", &sema) != 0) {
++    return ENOSYS;
++  }
++
++  msg.SEMA_NUM = semaphore_number;
++  return _syscall(sema, SEMA_DOWN, &msg);
++
++}
++
++int sem_up(int semaphore_number){
++
++  endpoint_t sema;
++  message msg;
++
++  if (minix_rs_lookup("sema", &sema) != 0) {
++    return ENOSYS;
++  }
++
++  msg.SEMA_NUM = semaphore_number;
++  return _syscall(sema, SEMA_UP, &msg);
++
++}
++
++int sem_release(int semaphore_number){
++
++  endpoint_t sema;
++  message msg;
++
++  if (minix_rs_lookup("sema", &sema) != 0) {
++    return ENOSYS;
++  }
++
++  msg.SEMA_NUM = semaphore_number;
++  return _syscall(sema, SEMA_RELEASE, &msg);
++
++}
+diff -ruNp actual_source_clean/releasetools/revision minix_src_clean/releasetools/revision
+--- actual_source_clean/releasetools/revision	2013-02-15 03:33:40.000000000 -0800
++++ minix_src_clean/releasetools/revision	2016-05-23 16:03:06.000000000 -0700
+@@ -1 +1 @@
+-1
++2
+diff -ruNp actual_source_clean/servers/Makefile minix_src_clean/servers/Makefile
+--- actual_source_clean/servers/Makefile	2013-02-15 03:18:14.000000000 -0800
++++ minix_src_clean/servers/Makefile	2016-05-21 16:03:26.000000000 -0700
+@@ -5,12 +5,12 @@
+ 
+ .if ${MKIMAGEONLY} == "yes"
+ 
+-SUBDIR=	ds init mfs pfs pm rs sched vfs vm
++SUBDIR=	ds init mfs pfs pm rs sched sema vfs vm
+ 
+ .else
+ 
+ SUBDIR=	ds ext2 inet init ipc is iso9660fs \
+-	mfs pfs pm procfs rs sched vfs vm devman
++	mfs pfs pm procfs rs sched sema vfs vm devman
+ 
+ .if ${MACHINE_ARCH} == "i386"
+ SUBDIR+= hgfs vbfs
+diff -ruNp actual_source_clean/servers/sema/Makefile minix_src_clean/servers/sema/Makefile
+--- actual_source_clean/servers/sema/Makefile	1969-12-31 16:00:00.000000000 -0800
++++ minix_src_clean/servers/sema/Makefile	2016-05-23 22:22:39.000000000 -0700
+@@ -0,0 +1,11 @@
++# Makefile for Semaphore Server
++PROG=	sema
++SRCS=	sema.c
++
++DPADD+=	${LIBSYS}
++LDADD+=	-lsys
++
++MAN=
++BINDIR?= /usr/sbin
++
++.include <minix.service.mk>
+diff -ruNp actual_source_clean/servers/sema/sema.c minix_src_clean/servers/sema/sema.c
+--- actual_source_clean/servers/sema/sema.c	1969-12-31 16:00:00.000000000 -0800
++++ minix_src_clean/servers/sema/sema.c	2016-05-24 21:50:36.000000000 -0700
+@@ -0,0 +1,157 @@
++#include "sema.h"
++
++int sem_init (message * m_ptr) {
++	// debug("sem init start");
++  int index;
++
++  if (!semaphore_list_size) {
++    int i;
++
++    semaphore_list_size	= 25;
++    semaphores = malloc(sizeof (semaphore_t) * semaphore_list_size);
++    tail_index = 0;
++
++    for (i = 0; i < semaphore_list_size; i++)
++      semaphores[i].used = 0;
++  }
++
++  if (tail_index > semaphore_list_size) {
++      semaphores = (semaphore_t *) realloc(semaphores, semaphore_list_size * 2);
++    }
++  index  = tail_index;
++  tail_index++;
++
++  if (!semaphores) {
++    return ENOMEM;
++  }
++
++  semaphores[index].head   = NULL;
++  semaphores[index].tail   = NULL;
++	semaphores[index].value  = m_ptr->SEMA_VALUE;
++	semaphores[index].used = 1;
++
++	return index;
++}
++
++
++int sem_down (message * m_ptr) {
++	// debug("SEM_DOWN received.");
++
++  if (!semaphores) {
++    return EINVAL;
++  } else if (m_ptr->SEMA_NUM >= semaphore_list_size) {
++    return EINVAL;
++  } else if (!semaphores[m_ptr->SEMA_NUM].used) {
++    return EINVAL;
++  }
++
++  // debug("SEM_DOWN cleared.");
++
++	if (semaphores[m_ptr->SEMA_NUM].value > 0) {
++    semaphores[m_ptr->SEMA_NUM].value--;
++    return OK;
++	} else {
++    node_t * temp = malloc(sizeof(node_t));
++
++    temp->process = m_ptr->m_source;
++    temp->next = NULL;
++
++    if (semaphores[m_ptr->SEMA_NUM].head == 0)
++      semaphores[m_ptr->SEMA_NUM].head = temp;
++    else
++      semaphores[m_ptr->SEMA_NUM].tail->next = temp;
++    semaphores[m_ptr->SEMA_NUM].tail = temp;
++
++    // debug("SEM_DOWN pickup.");
++
++    return EDONTREPLY;
++	}
++}
++
++int sem_up (message * m_ptr) {
++	// debug("SEM_UP received.");
++  message m;
++  if (!semaphores) {
++    return EINVAL;
++  } else if (m_ptr->SEMA_NUM >= semaphore_list_size) {
++    return EINVAL;
++  } else if (!semaphores[m_ptr->SEMA_NUM].used) {
++    return EINVAL;
++  }
++
++	if (!semaphores[m_ptr->SEMA_NUM].head) {
++		semaphores[m_ptr->SEMA_NUM].value++;
++	} else {
++		m.SEMA_NUM = semaphores[m_ptr->SEMA_NUM].value;
++
++		node_t * temp = semaphores[m_ptr->SEMA_NUM].head;
++		semaphores[m_ptr->SEMA_NUM].head = semaphores[m_ptr->SEMA_NUM].head->next;
++
++    // debug("sem-up send.");
++
++    send(temp->process, &m);
++		free(temp);
++	}
++	return OK;
++}
++
++int sem_release (message * m_ptr) {
++
++	if (!semaphores[m_ptr->SEMA_NUM].head) {
++		return SEMAUSED;
++	}
++	semaphores[m_ptr->SEMA_NUM].used = 0;
++
++	return OK;
++}
++
++/*===========================================================================*
++*				main					     *
++*===========================================================================*/
++
++int main (void) {
++	endpoint_t sender;
++  int call_nr, result;
++	message	m;
++
++	/* SEF local startup. */
++	sef_startup();
++
++	while (1) {
++		int r, ipc;
++
++		if ((r = sef_receive_status(ANY, &m, &ipc)) != OK) {
++			panic("SEMA: unable to recieve message");
++		}
++
++    call_nr	= m.m_type;
++		sender = m.m_source;
++
++		switch (call_nr) {
++			case SEMA_DOWN:
++				result = sem_down(&m);
++				break;
++			case SEMA_INIT:
++				result = sem_init(&m);
++				break;
++			case SEMA_RELEASE:
++				result = sem_release(&m);
++				break;
++			case SEMA_UP:
++				result = sem_up(&m);
++				break;
++			default:
++				result = EINVAL;
++		}
++
++		if (result != EDONTREPLY) {
++			int r2;
++			m.m_type = result;
++			if ((r2 = send(sender, &m)) != OK) {
++				debug("Uable to send a reply");
++			}
++		}
++	}
++
++	return OK;
++}
+diff -ruNp actual_source_clean/servers/sema/sema.h minix_src_clean/servers/sema/sema.h
+--- actual_source_clean/servers/sema/sema.h	1969-12-31 16:00:00.000000000 -0800
++++ minix_src_clean/servers/sema/sema.h	2016-05-24 21:45:41.000000000 -0700
+@@ -0,0 +1,58 @@
++/* This is the master header for the Scheduler.  It includes some other files
++ * and defines the principal constants.
++ */
++#define _POSIX_SOURCE      1	/* tell headers to include POSIX stuff */
++#define _MINIX             1	/* tell headers to include MINIX stuff */
++#define _SYSTEM            1	/* tell headers that this is the kernel */
++
++/* The following are so basic, all the *.c files get them automatically. */
++
++#include <minix/config.h>	/* MUST be first */
++#include <sys/types.h>
++#include <minix/const.h>
++
++#include <minix/syslib.h>
++#include <minix/sysutil.h>
++
++#include <minix/com.h>
++
++#include <minix/sef.h>
++
++#include <stdio.h>
++#include <string.h>
++#include <stdlib.h>
++
++#include <errno.h>
++
++
++int sem_init(message * m_ptr);
++int sem_up(message * m_ptr);
++int sem_down(message * m_ptr);
++int sem_release(message * m_ptr);
++
++typedef enum { false, true } bool;
++
++#define DEBUG
++#ifdef DEBUG
++    #define    debug(f,...)    fprintf(stderr,f "\n",##__VA_ARGS__)
++#else
++    #define    debug(f,...)
++#endif
++
++typedef struct node_t
++{
++	endpoint_t process;
++	struct node_t * next;
++} node_t;
++
++typedef struct semaphore_t
++{
++	int value;
++	node_t * head;
++	node_t * tail;
++	int used;
++} semaphore_t;
++
++semaphore_t	*semaphores;
++int	semaphore_list_size;
++int	tail_index;
+diff -ruNp actual_source_clean/sys/sys/errno.h minix_src_clean/sys/sys/errno.h
+--- actual_source_clean/sys/sys/errno.h	2013-02-15 03:18:14.000000000 -0800
++++ minix_src_clean/sys/sys/errno.h	2016-05-24 18:38:51.000000000 -0700
+@@ -1,8 +1,8 @@
+ /* The <errno.h> header defines the numbers of the various errors that can
+- * occur during program execution.  They are visible to user programs and 
+- * should be small positive integers.  However, they are also used within 
+- * MINIX, where they must be negative.  For example, the READ system call is 
+- * executed internally by calling do_read().  This function returns either a 
++ * occur during program execution.  They are visible to user programs and
++ * should be small positive integers.  However, they are also used within
++ * MINIX, where they must be negative.  For example, the READ system call is
++ * executed internally by calling do_read().  This function returns either a
+  * (negative) error number or a (positive) number of bytes actually read.
+  *
+  * To solve the problem of having the error numbers be negative inside the
+@@ -25,7 +25,7 @@
+ #   define _SIGN         -
+ #   define OK            0
+ #else
+-#   define _SIGN         
++#   define _SIGN
+ #endif
+ 
+ 
+@@ -75,6 +75,7 @@
+ #define EILSEQ        (_SIGN 44 )  /* illegal byte sequence */
+ #define	ENOMSG	      (_SIGN 45 )  /* No message of desired type */
+ #define EOVERFLOW     (_SIGN 46 )  /* Value too large to be stored in data type */
++#define SEMAUSED			  (_SIGN 47)   /* Semaphore used */
+ 
+ /* The following errors relate to networking. */
+ #define EPACKSIZE     (_SIGN 50 )  /* invalid packet size for some protocol */
+@@ -116,7 +117,7 @@
+ 
+ #define EGENERIC      (_SIGN 99 )  /* generic error */
+ 
+-/* The following are not POSIX errors, but they can still happen. 
++/* The following are not POSIX errors, but they can still happen.
+  * All of these are generated by the kernel and relate to message passing.
+  */
+ #define ELOCKED      (_SIGN 101 )  /* can't send message due to deadlock */
+@@ -153,7 +154,7 @@
+ #define	EDQUOT	     (_SIGN 177 )  /* Disc quota exceeded */
+ 
+ /* Realtime, XSI STREAMS option errors */
+-#define	EMULTIHOP    (_SIGN 180 )  /* Multihop attempted */ 
++#define	EMULTIHOP    (_SIGN 180 )  /* Multihop attempted */
+ #define	ENOLINK	     (_SIGN 181 )  /* Link has been severed */
+ #define	EPROTO	     (_SIGN 182 )  /* Protocol error */
+ 

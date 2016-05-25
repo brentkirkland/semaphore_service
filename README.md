@@ -7,7 +7,7 @@ ____  ___ _ __ ___   __ _ _ __ | |__   ___  _ __ ___
 / __|/ _ \ '_ ` _ \ / _` | '_ \| '_ \ / _ \| '__/ _ \
 \__ \  __/ | | | | | (_| | |_) | | | | (_) | | |  __/
 |___/\___|_| |_| |_|\__,_| .__/|_| |_|\___/|_|  \___|
-|_|                         
+                         |_|                         
 ```                       
 
 This minix 3.2.1 project creates a minix _service_ for semaphores. This is not service that starts directly with boot.
@@ -21,11 +21,10 @@ Semaphores allow for synchronization across multiple processes. Within this proj
 
 ### TO COMPILE AFTER RUNNING PATCH:
 ```
-2. cd /usr/src/
-3. make build MKUPDATE=yes
-4. make include etcforce
-5. reboot
-
+1. cd /usr/src/
+2. make build MKUPDATE=yes
+3. make include etcforce
+4. reboot
 ```
 
 _NOTE:_ `ake include etcforce` can cause trouble with pkgin. Use it with caution or include:

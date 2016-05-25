@@ -36,7 +36,7 @@ service sema {
   uid 0;
 };
 ```
-to /etc/system.conf
+in /etc/system.conf
 
 
 ### TESTING

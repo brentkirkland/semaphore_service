@@ -11,9 +11,8 @@ Semaphores allow for synchronization across multiple processes. Within this proj
 * `int sem_int(int semaphore_number)` which decrements a specific semaphore up by one. Or adds it to a waiting queue.
 * `int sem_int(int semaphore_number)` which releases the semaphore from the semaphore list.
 
-## TO COMPILE:
+### TO COMPILE AFTER RUNNING PATCH:
 ```
-1. Run Patch
 2. cd /usr/src/
 3. make build MKUPDATE=yes
 4. make include etcforce
@@ -31,7 +30,7 @@ service sema {
 }
 ```
 
-## Testing
+### TESTING
 Compile pizza.c with cc. There is only one single for for testing, because it instead uses fork and wait to spawn separate processes for undergrads and grads.
 
 _NOTE:_ pizza.txt explain what is happening is pizza.c

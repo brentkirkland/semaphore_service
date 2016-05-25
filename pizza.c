@@ -31,7 +31,6 @@ void print_time() {
 	time(&rawtime);
 	timeinfo = localtime(&rawtime);
 	printf("%d:%d ", timeinfo->tm_min, timeinfo->tm_sec);
-	free(timeinfo);
 }
 
 void be_grad() {

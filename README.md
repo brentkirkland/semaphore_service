@@ -2,13 +2,20 @@
 
 ### Brent Kirkland and Greg Gunterson
 
+_                    
+___  ___ _ __ ___   __ _ _ __ | |__   ___  _ __ ___
+/ __|/ _ \ '_ ` _ \ / _` | '_ \| '_ \ / _ \| '__/ _ \
+\__ \  __/ | | | | | (_| | |_) | | | | (_) | | |  __/
+|___/\___|_| |_| |_|\__,_| .__/|_| |_|\___/|_|  \___|
+|_|                         
+
 This minix 3.2.1 project creates a minix _service_ for semaphores. This is not service that starts directly with boot.
 
 Semaphores allow for synchronization across multiple processes. Within this project are 4 functions that help solve synchronization issues.
 
-* `int sem_int(int semaphore_value)` which creates a semaphore
-* `int sem_up(int semaphore_number)` which increments a specific semaphore up by one. Or removes it off a waiting queue.
-* `int sem_int(int semaphore_number)` which decrements a specific semaphore up by one. Or adds it to a waiting queue.
+* `int sem_int(int semaphore_value)` which creates a semaphore within a semaphore list.
+* `int sem_up(int semaphore_number)` which increments a specific semaphore up by one or removes it off a waiting queue.
+* `int sem_int(int semaphore_number)` which decrements a specific semaphore up by one or adds it to a waiting queue.
 * `int sem_int(int semaphore_number)` which releases the semaphore from the semaphore list.
 
 ### TO COMPILE AFTER RUNNING PATCH:

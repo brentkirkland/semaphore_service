@@ -1,6 +1,6 @@
 # semaphore_service
 
-### Brent Kirkland and Greg Gunterson
+### Brent Kirkland
 
 ```
 ____  ___ _ __ ___   __ _ _ __ | |__   ___  _ __ ___
@@ -10,7 +10,7 @@ ____  ___ _ __ ___   __ _ _ __ | |__   ___  _ __ ___
                          |_|                         
 ```                       
 
-This minix 3.2.1 project creates a minix _service_ for semaphores. This is not service that starts directly with boot.
+This minix 3.2.1 project creates a minix _service_ for semaphores. This is not a service that starts directly with boot.
 
 Semaphores allow for synchronization across multiple processes. Within this project are 4 functions that help solve synchronization issues.
 

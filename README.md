@@ -1,6 +1,6 @@
 # semaphore_service
 
-### Brent Kirkland
+### Brent Kirkland and Greg Gunterson
 
 ```
 ____  ___ _ __ ___   __ _ _ __ | |__   ___  _ __ ___
